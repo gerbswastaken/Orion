@@ -1,11 +1,16 @@
 #include <windows.h>
+#include <windowsx.h>
 #include <chrono>
 #include <cstdio>
 #include <iostream>
 
+#include <hidusage.h>
+
 #include "constants.h"
 #include "Game.h"
 #include "InputHandler.h"
+#include "BMPLoader.h"
+#include "Image.h"
 
 bool running = true;
 
@@ -63,6 +68,7 @@ LRESULT CALLBACK window_callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
+	ShowCursor(false);
 	// TO SEE STATUS OUTPUT IN CONSOLE!
 	AllocConsole();
 	FILE* fpstdin = stdin, * fpstdout = stdout, * fpstderr = stderr;
@@ -70,6 +76,14 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	freopen_s(&fpstdin, "CONIN$", "r", stdin);
 	freopen_s(&fpstdout, "CONOUT$", "w", stdout);
 	freopen_s(&fpstderr, "CONOUT$", "w", stderr);
+
+	Image stone_wall_sprite;
+	Image wood_floor_sprite;
+	Image gold_ceiling_sprite;
+	BMPLoader::load_BMP_to_image("stone_wall.bmp", stone_wall_sprite);
+	BMPLoader::load_BMP_to_image("wood_floor.bmp", wood_floor_sprite);
+	BMPLoader::load_BMP_to_image("gold_ceiling.bmp", gold_ceiling_sprite);
+
 
 	// Create a Window Class
 	WNDCLASS window_class = {};
@@ -84,6 +98,14 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	HWND hWnd = CreateWindow(window_class.lpszClassName, L"Orion Engine", (WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME) | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT, constants::width, constants::height, 0, 0, hInstance, 0);
 	HDC hdc = GetDC(hWnd);
 
+	// Registering the Mouse as a RAWINPUTDEVICE:
+	RAWINPUTDEVICE raw_input_devices[1];
+	raw_input_devices[0].usUsagePage = HID_USAGE_PAGE_GENERIC;
+	raw_input_devices[0].usUsage = HID_USAGE_GENERIC_MOUSE;
+	raw_input_devices[0].dwFlags = RIDEV_INPUTSINK;
+	raw_input_devices[0].hwndTarget = hWnd;
+	RegisterRawInputDevices(raw_input_devices, 1, sizeof(raw_input_devices[0]));
+
 	auto display_last_time = std::chrono::steady_clock::now();
 
 	auto last_time = std::chrono::high_resolution_clock::now();
@@ -95,9 +117,6 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	int ticks_per_second = 0;
 	int frames_per_second = 0;
 
-	//std::cout << "buffer_width: " << buffer_width << '\n';
-	//std::cout << "buffer_height: " << buffer_height << '\n';
-
 	Game* game = new Game(buffer_width, buffer_height);
 	Input game_input = {};
 
@@ -107,6 +126,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 		{
 			game_input.key_input[i].is_changed = false;
 		}
+		game_input.mouse_dx = 0;
+		game_input.mouse_dy = 0;
 
 		// Gather Input
 		MSG message;
@@ -158,12 +179,44 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 							game_input.key_input[KEY::KEY_RIGHT].is_changed = true;
 						} break;
 
+						case VK_UP:
+						{
+							game_input.key_input[KEY::KEY_UP].is_down = is_down;
+							game_input.key_input[KEY::KEY_UP].is_changed = true;
+						} break;
+						case VK_DOWN:
+						{
+							game_input.key_input[KEY::KEY_DOWN].is_down = is_down;
+							game_input.key_input[KEY::KEY_DOWN].is_changed = true;
+						} break;
+
 						case VK_SPACE:
 						{
 							game_input.key_input[KEY::KEY_SPACE].is_down = is_down;
 							game_input.key_input[KEY::KEY_SPACE].is_changed = true;
 						} break;
-							
+
+						case VK_CONTROL:
+						{
+							game_input.key_input[KEY::KEY_CTRL].is_down = is_down;
+							game_input.key_input[KEY::KEY_CTRL].is_changed = true;
+						} break;
+					}
+				} break;
+
+				case WM_INPUT:
+				{
+					UINT dwSize = sizeof(RAWINPUT);
+					static BYTE lpb[sizeof(RAWINPUT)];
+
+					GetRawInputData((HRAWINPUT)message.lParam, RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER));
+
+					RAWINPUT* raw = (RAWINPUT*)lpb;
+
+					if (raw->header.dwType == RIM_TYPEMOUSE)
+					{
+						game_input.mouse_dx = raw->data.mouse.lLastX;
+						game_input.mouse_dy = raw->data.mouse.lLastY;
 					}
 				} break;
 					
@@ -186,13 +239,19 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 		if (std::chrono::duration_cast<std::chrono::milliseconds>(display_current_time - display_last_time).count() > 1000)
 		{
 			display_last_time = display_current_time;
-			std::cout << "Ticks: " << ticks_per_second << " | Frames: " << frames_per_second << '\n';
+			std::cout << std::dec << "Ticks: " << ticks_per_second << " | Frames: " << frames_per_second << '\n';
+			//std::cout << "(x,y) : " << game_input.mouse_x << ", " << game_input.mouse_y << '\n';
 			ticks_per_second = 0;
 			frames_per_second = 0;
 		}
 
 		// Call the render() function here
-		game->render(buffer_memory, buffer_width, buffer_height);
+		
+		//game->render(buffer_memory, buffer_width, buffer_height);
+		//game->renderBMP(buffer_memory, buffer_width, buffer_height, 20, 20, image);
+		//game->render_temp(buffer_memory, buffer_width, buffer_height);
+		
+		game->render_new(buffer_memory, buffer_width, buffer_height, stone_wall_sprite, wood_floor_sprite, gold_ceiling_sprite);
 		
 		// render the minimap (using the console; only for debugging)
 		//game->render_console();

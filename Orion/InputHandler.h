@@ -19,6 +19,9 @@ enum KEY
 	KEY_SPACE,
 	KEY_LEFT,
 	KEY_RIGHT,
+	KEY_UP,
+	KEY_DOWN,
+	KEY_CTRL,
 
 	KEY_COUNT
 };
@@ -26,6 +29,8 @@ enum KEY
 struct Input
 {
 	KeyInputState key_input[KEY::KEY_COUNT];
+	int mouse_dx = 0;
+	int mouse_dy = 0;
 };
 
 #endif

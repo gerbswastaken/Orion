@@ -128,16 +128,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BMPLoader.cpp" />
     <ClCompile Include="Game.cpp" />
+    <ClCompile Include="Image.cpp" />
     <ClCompile Include="InputHandler.cpp" />
+    <ClCompile Include="Intersection.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="windows32platform.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BMPLoader.h" />
     <ClInclude Include="constants.h" />
     <ClInclude Include="Game.h" />
+    <ClInclude Include="Image.h" />
     <ClInclude Include="InputHandler.h" />
+    <ClInclude Include="Intersection.h" />
     <ClInclude Include="Renderer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Image.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
