@@ -133,6 +133,7 @@
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="InputHandler.cpp" />
     <ClCompile Include="Intersection.cpp" />
+    <ClCompile Include="Map.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="windows32platform.cpp" />
   </ItemGroup>
@@ -143,6 +144,7 @@
     <ClInclude Include="Image.h" />
     <ClInclude Include="InputHandler.h" />
     <ClInclude Include="Intersection.h" />
+    <ClInclude Include="Map.h" />
     <ClInclude Include="Renderer.h" />
   </ItemGroup>
   <ItemGroup>

@@ -11,6 +11,7 @@
 #include "InputHandler.h"
 #include "BMPLoader.h"
 #include "Image.h"
+#include "Map.h"
 
 bool running = true;
 
@@ -77,12 +78,58 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	freopen_s(&fpstdout, "CONOUT$", "w", stdout);
 	freopen_s(&fpstderr, "CONOUT$", "w", stderr);
 
-	Image stone_wall_sprite;
-	Image wood_floor_sprite;
-	Image gold_ceiling_sprite;
-	BMPLoader::load_BMP_to_image("stone_wall.bmp", stone_wall_sprite);
-	BMPLoader::load_BMP_to_image("wood_floor.bmp", wood_floor_sprite);
-	BMPLoader::load_BMP_to_image("gold_ceiling.bmp", gold_ceiling_sprite);
+	Image wall_stone_bricks;
+	Image wall_bookshelf;
+	Image wall_tnt;
+
+	Image floor_oak_planks;
+	Image floor_acacia_planks;
+	Image floor_darkoak_planks;
+	Image floor_crimson_planks;
+
+	Image ceiling_iron_block;
+	Image ceiling_gold_block;
+	Image ceiling_diamond_block;
+	Image ceiling_emerald_block;
+
+	Image error_texture;
+
+	BMPLoader::load_BMP_to_image("wall_stone_bricks.bmp", wall_stone_bricks);
+	BMPLoader::load_BMP_to_image("wall_bookshelf.bmp", wall_bookshelf);
+	BMPLoader::load_BMP_to_image("wall_tnt.bmp", wall_tnt);
+
+	BMPLoader::load_BMP_to_image("floor_oak_planks.bmp", floor_oak_planks);
+	BMPLoader::load_BMP_to_image("floor_acacia_planks.bmp", floor_acacia_planks);
+	BMPLoader::load_BMP_to_image("floor_darkoak_planks.bmp", floor_darkoak_planks);
+	BMPLoader::load_BMP_to_image("floor_crimson_planks.bmp", floor_crimson_planks);
+
+	BMPLoader::load_BMP_to_image("ceiling_iron_block.bmp", ceiling_iron_block);
+	BMPLoader::load_BMP_to_image("ceiling_gold_block.bmp", ceiling_gold_block);
+	BMPLoader::load_BMP_to_image("ceiling_diamond_block.bmp", ceiling_diamond_block);
+	BMPLoader::load_BMP_to_image("ceiling_emerald_block.bmp", ceiling_emerald_block);
+
+	BMPLoader::load_BMP_to_image("error_texture.bmp", error_texture);
+
+	Image** wall_textures = new Image* [MAP_WALL::WALL_COUNT];
+	wall_textures[MAP_WALL::WALL_EMPTY] = nullptr;	// Since WALL_EMPTY represents no wall to render
+	wall_textures[MAP_WALL::WALL_STONE] = &wall_stone_bricks;
+	wall_textures[MAP_WALL::WALL_BOOKSHELF] = &wall_bookshelf;
+	wall_textures[MAP_WALL::WALL_TNT] = &wall_tnt;
+	wall_textures[MAP_WALL::WALL_ERROR] = &error_texture;
+
+	Image** floor_textures = new Image* [MAP_FLOOR::FLOOR_COUNT];
+	floor_textures[MAP_FLOOR::FLOOR_OAK_PLANKS] = &floor_oak_planks;
+	floor_textures[MAP_FLOOR::FLOOR_ACACIA_PLANKS] = &floor_acacia_planks;
+	floor_textures[MAP_FLOOR::FLOOR_DARKOAK_PLANKS] = &floor_darkoak_planks;
+	floor_textures[MAP_FLOOR::FLOOR_CRIMSON_PLANKS] = &floor_crimson_planks;
+	floor_textures[MAP_FLOOR::FLOOR_ERROR] = &error_texture;
+
+	Image** ceiling_textures = new Image* [MAP_CEILING::CEILING_COUNT];
+	ceiling_textures[MAP_CEILING::CEILING_IRON_BLOCK] = &ceiling_iron_block;
+	ceiling_textures[MAP_CEILING::CEILING_GOLD_BLOCK] = &ceiling_gold_block;
+	ceiling_textures[MAP_CEILING::CEILING_DIAMOND_BLOCK] = &ceiling_diamond_block;
+	ceiling_textures[MAP_CEILING::CEILING_EMERALD_BLOCK] = &ceiling_emerald_block;
+	ceiling_textures[MAP_CEILING::CEILING_ERROR] = &error_texture;
 
 
 	// Create a Window Class
@@ -117,7 +164,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	int ticks_per_second = 0;
 	int frames_per_second = 0;
 
-	Game* game = new Game(buffer_width, buffer_height);
+	Game* game = new Game(buffer_width, buffer_height, wall_textures, floor_textures, ceiling_textures);
 	Input game_input = {};
 
 	while (running)
@@ -251,7 +298,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 		//game->renderBMP(buffer_memory, buffer_width, buffer_height, 20, 20, image);
 		//game->render_temp(buffer_memory, buffer_width, buffer_height);
 		
-		game->render_new(buffer_memory, buffer_width, buffer_height, stone_wall_sprite, wood_floor_sprite, gold_ceiling_sprite);
+		game->render_new(buffer_memory, buffer_width, buffer_height);
 		
 		// render the minimap (using the console; only for debugging)
 		//game->render_console();
