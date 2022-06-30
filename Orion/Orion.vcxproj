@@ -129,23 +129,29 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BMPLoader.cpp" />
+    <ClCompile Include="Entity.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="InputHandler.cpp" />
     <ClCompile Include="Intersection.cpp" />
     <ClCompile Include="Map.cpp" />
+    <ClCompile Include="Player.cpp" />
     <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="Vector2D.cpp" />
     <ClCompile Include="windows32platform.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BMPLoader.h" />
     <ClInclude Include="constants.h" />
+    <ClInclude Include="Entity.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Image.h" />
     <ClInclude Include="InputHandler.h" />
     <ClInclude Include="Intersection.h" />
     <ClInclude Include="Map.h" />
+    <ClInclude Include="Player.h" />
     <ClInclude Include="Renderer.h" />
+    <ClInclude Include="Vector2D.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Image.bmp" />

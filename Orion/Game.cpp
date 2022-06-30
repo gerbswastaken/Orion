@@ -14,6 +14,7 @@ Game::Game(int buffer_width, int buffer_height, Image** wall_textures, Image** f
 	player_height = (map_tile_dimension / 2);
 
 	game_map = new Map(wall_textures, floor_textures, ceiling_textures);
+	player = new Player(player_x, player_y, player_direction, (map_tile_dimension / 2));
 }
 
 Intersection& Game::get_vertical_intersection_distance(int ray_x, int ray_y, int ray_direction, Intersection& intersection_vertical)
@@ -117,6 +118,11 @@ bool Game::wall_intersection_movement(int x, int y)
 	return map[(x / map_tile_dimension) + ((y / map_tile_dimension) * map_dimension)];
 }
 
+void Game::tick_new(Input* input)
+{
+	player->tick_new(input, game_map);
+}
+
 void Game::tick(Input* input)
 {
 	player_is_moving = false;
@@ -178,55 +184,101 @@ void Game::clearScreen(void* pixel_array, int buffer_width, int buffer_height)
 	*pixel = 0x0000FF;
 }
 
-void Game::render(void* pixel_array, int buffer_width, int buffer_height, Image& texture)
+void Game::render_new(void* pixel_array, int buffer_width, int buffer_height)
 {
-	// Clear the screen
 	unsigned int* pixel = static_cast<unsigned int*>(pixel_array);
-	for (int i = 0; i < buffer_width * buffer_height; ++i)
-	{
-		pixel[i] = 0x000000;
-	}
-
 	double degrees_per_pixel = constants::field_of_view / static_cast<double>(buffer_width);
 
 	for (int x = 0; x < buffer_width; ++x)
 	{
-		int ray_direction = (player_direction - (constants::field_of_view / 2)) + (x * degrees_per_pixel);
+		int ray_direction = (player->direction - (constants::field_of_view / 2)) + (x * degrees_per_pixel);
 		if (ray_direction > 360) ray_direction -= 360;
 		if (ray_direction < 0) ray_direction += 360;
-		
+
 		Intersection intersection_horizontal;
 		Intersection intersection_vertical;
 		Intersection minimum;
-		minimum = get_minimum_intersection(get_horizontal_intersection_distance(player_x, player_y, ray_direction, intersection_horizontal), get_vertical_intersection_distance(player_x, player_y, ray_direction, intersection_vertical));
-		double corrected_distance = minimum.intersection_distance * cos(static_cast<double>((ray_direction - player_direction)) * (constants::pi / 180.0));
+		minimum = get_minimum_intersection(get_horizontal_intersection_distance(player->x, player->y, ray_direction, intersection_horizontal), get_vertical_intersection_distance(player->x, player->y, ray_direction, intersection_vertical));
+		double corrected_distance = minimum.intersection_distance * cos(static_cast<double>((ray_direction - player->direction)) * (constants::pi / 180.0));
 		int wall_slice_height = (map_tile_dimension / corrected_distance) * distance_to_projection_plane;
-		
-		// Determining the Offset required for texture_mapping:
-		int texture_offset;
+
+		// Determining the Offset required for texture mapping the walls:
+		int wall_texture_offset;
 		if (minimum.is_horizontal_intersection)
 		{
-			texture_offset = minimum.intersection_x % map_tile_dimension;
+			wall_texture_offset = minimum.intersection_x % map_tile_dimension;
 		}
 		else
 		{
-			texture_offset = minimum.intersection_y % map_tile_dimension;
+			wall_texture_offset = minimum.intersection_y % map_tile_dimension;
 		}
-		
+
 		unsigned int color = 0x000000;
-		int y_max = fmin(wall_slice_height, buffer_height);
-		
 		for (int i = 0; i < wall_slice_height; ++i)
 		{
-			int y = ((buffer_height / 2) - (wall_slice_height / 2) + i);
+			int y = (((buffer_height / 2) - player->projection_plane_offset) - (wall_slice_height / 2) + i);
 			if (y >= buffer_height || y < 0) continue;
-			color = texture.pixel_array[texture_offset + (static_cast<int>((static_cast<double>(i) / static_cast<double>(wall_slice_height)) * map_tile_dimension) * texture.width)];
+			color = minimum.wall_texture_sprite->pixel_array[wall_texture_offset + (static_cast<int>((static_cast<double>(i) / static_cast<double>(wall_slice_height)) * map_tile_dimension) * (minimum.wall_texture_sprite)->width)];
 			pixel[(buffer_width - x) + (y * buffer_width)] = color;
+		}
+
+		// Texture-mapping the Floors:
+
+		int wall_bottom_y = (((buffer_height / 2) - player->projection_plane_offset) - (wall_slice_height / 2));
+		// First, check whether we need to draw any floors in the first place!
+		if (!((((buffer_height / 2) - player->projection_plane_offset) - (wall_slice_height / 2)) < 0))
+		{
+			for (int y = wall_bottom_y - 1; y >= 0; --y)
+			{
+				if (y >= buffer_height || y < 0) continue;
+				int perpendicular_distance_floor = ((distance_to_projection_plane * player->height) / (((buffer_height / 2) - player->projection_plane_offset) - y));
+				int corrected_perpendicular_distance_floor = (perpendicular_distance_floor / cos(static_cast<double>((ray_direction - player->direction)) * (constants::pi / 180.0)));
+
+				int x_intersection_floor = player->x + (corrected_perpendicular_distance_floor * cos(static_cast<double>(ray_direction) * (constants::pi / 180.0)));
+				int y_intersection_floor = player->y - (corrected_perpendicular_distance_floor * sin(static_cast<double>(ray_direction) * (constants::pi / 180.0)));
+
+				int floor_texture_offset_x = x_intersection_floor % map_tile_dimension;
+				int floor_texture_offset_y = y_intersection_floor % map_tile_dimension;
+
+
+				//color = floor_texture.pixel_array[floor_texture_offset_x + (floor_texture_offset_y * floor_texture.width)];
+				//int debug = game_map->floor_intersection(x_intersection_floor, y_intersection_floor);
+				Image* floor_texture = game_map->floor_textures[game_map->floor_intersection(x_intersection_floor, y_intersection_floor)];
+				color = floor_texture->pixel_array[floor_texture_offset_x + (floor_texture_offset_y * floor_texture->width)];
+
+				pixel[(buffer_width - x) + (y * buffer_width)] = color;
+			}
+		}
+
+		// Texture-mapping the Ceilings:
+		int wall_top_y = (((buffer_height / 2) - player->projection_plane_offset) + (wall_slice_height / 2));
+		// First, check whether we need to draw any floors in the first place!
+		if (!((((buffer_height / 2) - player->projection_plane_offset) + (wall_slice_height / 2)) >= buffer_height))
+		{
+			for (int y = wall_top_y; y < buffer_height; ++y)
+			{
+				if (y >= buffer_height || y < 0) continue;
+				int perpendicular_distance_ceiling = ((distance_to_projection_plane * (map_tile_dimension - player->height)) / (y - ((buffer_height / 2) - player->projection_plane_offset)));
+				int corrected_perpendicular_distance_ceiling = (perpendicular_distance_ceiling / cos(static_cast<double>((ray_direction - player->direction)) * (constants::pi / 180.0)));
+
+				int x_intersection_ceiling = player->x + (corrected_perpendicular_distance_ceiling * cos(static_cast<double>(ray_direction) * (constants::pi / 180.0)));
+				int y_intersection_ceiling = player->y - (corrected_perpendicular_distance_ceiling * sin(static_cast<double>(ray_direction) * (constants::pi / 180.0)));
+
+				int ceiling_texture_offset_x = x_intersection_ceiling % map_tile_dimension;
+				int ceiling_texture_offset_y = y_intersection_ceiling % map_tile_dimension;
+
+				//color = ceiling_texture.pixel_array[ceiling_texture_offset_x + (ceiling_texture_offset_y * ceiling_texture.width)];
+				//int debug = game_map->ceiling_intersection(x_intersection_ceiling, y_intersection_ceiling);
+				Image* ceiling_texture = game_map->ceiling_textures[game_map->ceiling_intersection(x_intersection_ceiling, y_intersection_ceiling)];
+				color = ceiling_texture->pixel_array[ceiling_texture_offset_x + (ceiling_texture_offset_y * ceiling_texture->width)];
+
+				pixel[(buffer_width - x) + (y * buffer_width)] = color;
+			}
 		}
 	}
 }
 
-void Game::render_new(void* pixel_array, int buffer_width, int buffer_height)
+void Game::render(void* pixel_array, int buffer_width, int buffer_height)
 {
 	// Clear the screen
 	unsigned int* pixel = static_cast<unsigned int*>(pixel_array);

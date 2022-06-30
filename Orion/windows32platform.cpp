@@ -279,7 +279,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 		if (((std::chrono::duration_cast<std::chrono::nanoseconds>(current_time - last_time).count()) / ns) > 1.0) {
 			last_time = current_time;
 			color += 0x000001;
-			game->tick(&game_input);
+			game->tick_new(&game_input);
 			++ticks_per_second;
 		}
 

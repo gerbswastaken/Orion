@@ -4,8 +4,8 @@
 namespace constants 
 {
 	// Screen size
-	inline constexpr int width = 640;
-	inline constexpr int height = 480;
+	inline constexpr int width = 600;
+	inline constexpr int height = 450;
 
 	// Some constants for rendering
 	inline constexpr double field_of_view = 60.0;

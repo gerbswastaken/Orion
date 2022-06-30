@@ -10,13 +10,15 @@
 #include "Image.h"
 #include "Intersection.h"
 #include "Map.h"
+#include "Player.h"
 
 class Game
 {
 	public:
 		void tick(Input* input);	// Handles the main game loop and such
-		void render(void* pixel_array, int buffer_width, int buffer_height, Image& texture);
+		void tick_new(Input* input);
 
+		void render(void* pixel_array, int buffer_width, int buffer_height);
 		void render_new(void* pixel_array, int buffer_width, int buffer_height);
 
 		void render_console();
@@ -33,6 +35,7 @@ class Game
 		std::vector<double> cos_values;
 
 		Map* game_map;
+		Player* player;
 
 		int map_tile_dimension = 64;
 
