@@ -43,5 +43,6 @@ a randomly generated map, sound, and overall just optimize the rendering routine
   <li> Textured Map Walls, Floors, and Ceilings. </li>
   <li> Mouse-look along vertical and horizontal axes. </li>
   <li> Routines to convert <code>.bmp</code> texture files into hexadecimal colors. </li>
+  <li> Realistic player movement with friction and momentum </li>
   <li> Written in pure C++ (with no libraries outside of the standard C++ libraries) </li>
 <ul>
